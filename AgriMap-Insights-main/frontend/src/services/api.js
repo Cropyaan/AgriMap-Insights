@@ -1,38 +1,62 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// STRICT ENV USAGE: No fallback to localhost in production
+const API_URL = import.meta.env.VITE_API_URL;
+
+if (!API_URL) {
+  console.error('[AgriMap] CRITICAL: VITE_API_URL is not defined! API calls will fail.');
+} else {
+  console.log(`[AgriMap] Initializing with API_URL: ${API_URL}`);
+}
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 15000,
+  timeout: 30000, // Increased timeout for cold starts
 });
 
-// Add a request interceptor for potential logging or debugging
-api.interceptors.request.use(
-  (config) => {
-    console.log(`[API Request] ${config.method.toUpperCase()} ${config.url}`);
-    return config;
-  },
-  (error) => {
+// Retry Logic for Render Cold Starts (3 attempts)
+api.interceptors.response.use(null, async (error) => {
+  const { config, response } = error;
+  
+  // If no config or no retry set, reject
+  if (!config || config._retryCount >= 3) {
     return Promise.reject(error);
   }
-);
 
-// Add a response interceptor for global error handling
+  // Only retry on network errors or 503/504 (server waking up/timeout)
+  if (!response || response.status === 503 || response.status === 504 || error.code === 'ECONNABORTED') {
+    config._retryCount = (config._retryCount || 0) + 1;
+    console.warn(`[AgriMap] Retry attempt ${config._retryCount} for ${config.url}`);
+    
+    // Exponential backoff
+    const backoff = new Promise((resolve) => {
+      setTimeout(() => resolve(), config._retryCount * 2000);
+    });
+    
+    await backoff;
+    return api(config);
+  }
+
+  return Promise.reject(error);
+});
+
+// Debug Logging
+api.interceptors.request.use((config) => {
+  console.log(`[AgriMap Request] ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
+  return config;
+});
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('[API Error]', error.response || error.message);
+    console.error('[AgriMap API Error]', error.response || error.message);
     
-    // Customize error messages based on status codes
     if (!error.response) {
-      error.userMessage = 'Connection failed. The server may be waking up, please wait...';
+      error.userMessage = "Network error. Please check your internet or if the backend is down.";
     } else if (error.response.status >= 500) {
-      error.userMessage = 'Server-side error. Please try again later.';
-    } else if (error.response.data && error.response.data.detail) {
-      error.userMessage = error.response.data.detail;
+      error.userMessage = "Server error. We're working on it!";
     } else {
-      error.userMessage = 'An unexpected error occurred.';
+      error.userMessage = error.response.data?.detail || "An unexpected error occurred.";
     }
     
     return Promise.reject(error);
@@ -40,16 +64,12 @@ api.interceptors.response.use(
 );
 
 export const searchLocation = async (query) => {
-  const response = await api.get('/api/search', {
-    params: { q: query }
-  });
+  const response = await api.get('/api/search', { params: { q: query } });
   return response.data;
 };
 
 export const getLocationDetails = async (lat, lng) => {
-  const response = await api.get('/api/location', {
-    params: { lat, lng }
-  });
+  const response = await api.get('/api/location', { params: { lat, lng } });
   return response.data;
 };
 
