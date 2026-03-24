@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pydantic
+fastapi-cors
+requests
+httpx
+cachetools

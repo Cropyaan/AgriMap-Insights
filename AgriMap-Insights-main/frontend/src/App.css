@@ -1,0 +1,14 @@
+/* Cleaned up App.css - Removed unused Vite boilerplate */
+
+.main-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+  }
+}
