@@ -1,13 +1,14 @@
 import React from 'react';
 import { MapPin, Cloud, Droplets, Thermometer, Sprout, TrendingUp, Layers } from 'lucide-react';
 
-const InfoPanel = ({ data, loading, error, selectedLocation }) => {
+const InfoPanel = ({ data, loading, isWaking, error, selectedLocation }) => {
   if (loading) {
     return (
       <div className="info-sidebar">
         <div className="loader-container">
           <div className="spinner"></div>
-          <p>Analyzing location...</p>
+          <p>{isWaking ? 'Waking up server...' : 'Analyzing location...'}</p>
+          {isWaking && <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', textAlign: 'center' }}>Render's free tier sleeps after 15m. <br/> This can take up to 45 seconds.</p>}
         </div>
       </div>
     );
@@ -16,8 +17,16 @@ const InfoPanel = ({ data, loading, error, selectedLocation }) => {
   if (error) {
     return (
       <div className="info-sidebar">
-        <div className="empty-state">
-          <p style={{ color: '#d32f2f' }}>Error: {error}</p>
+        <div className="empty-state error-state">
+          <Layers size={48} color="#ef4444" />
+          <h3 style={{ color: '#ef4444' }}>Insight Failure</h3>
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{ marginTop: '16px', padding: '8px 16px', background: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Retry
+          </button>
         </div>
       </div>
     );

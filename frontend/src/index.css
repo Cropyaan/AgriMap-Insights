@@ -356,6 +356,23 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Embed Mode Adjustments */
+.main-container.embed-mode {
+  height: 100vh;
+}
+
+.embed-mode .info-sidebar {
+  border-left: none;
+  background: white;
+}
+
+.error-state {
+  padding: 2rem;
+  border: 1px solid #fee2e2;
+  border-radius: var(--border-radius);
+  background: #fffcfc;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .main-container {

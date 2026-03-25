@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import apiService from '../services/api';
 import { Search, X, Loader, Navigation } from 'lucide-react';
 
 const SearchBar = ({ onSearchResult }) => {
@@ -36,16 +36,14 @@ const SearchBar = ({ onSearchResult }) => {
     setError('');
     
     try {
-      const response = await axios.get(`http://localhost:8000/api/search`, {
-        params: { q: query }
-      });
+      const response = await apiService.searchLocation(query.trim());
       onSearchResult(response.data);
       setError('');
     } catch (err) {
       if (err.response && err.response.status === 404) {
-        setError('Location not found. Try a different name or pincode.');
+        setError('Location not found in India. Try a village, city, or pincode.');
       } else {
-        setError('Search failed. Please try again.');
+        setError('Search failed. The server might be waking up, please try again in a moment.');
       }
     } finally {
       setLoading(false);
